@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Jupyter|Home</title>
+    <link rel="icon" type="image/png" href="https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Jupyter_logo.svg/512px-Jupyter_logo.svg.png" sizes="16x16">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 10px;
+            display: block;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- EX-1 KNN  -->
+    <h1>KNN </h1>
+    <p>
+    <pre><code>
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.decomposition import PCA
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score
+        
+# Load the dataset
+df = pd.read_csv("data.csv")  # Replace with actual file path
+        
+# Basic EDA
+df.drop(columns=['id', 'Unnamed: 32'], inplace=True)  # Dropping unnecessary columns
+df['diagnosis'] = LabelEncoder().fit_transform(df['diagnosis'])  # Convert M/B to 1/0
+        
+# Checking for missing values
+print(df.isnull().sum())
+        
+# Descriptive statistics
+print(df.describe())
+        
+# Scatter plot of first two features
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=df.iloc[:, 1], y=df.iloc[:, 2], hue=df['diagnosis'], palette='coolwarm')
+plt.title("Scatter Plot of Two Features")
+plt.xlabel(df.columns[1])
+plt.ylabel(df.columns[2])
+plt.show()
+        
+# Splitting data into train and test sets
+X = df.drop(columns=['diagnosis'])
+y = df['diagnosis']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+# Standardize data
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+        
+# Finding best K value without PCA
+accuracy_scores = []
+k_range = range(1, 21)
+        
+for k in k_range:
+    knn = KNeighborsClassifier(n_neighbors=k)
+    knn.fit(X_train_scaled, y_train)
+    y_pred = knn.predict(X_test_scaled)
+    accuracy_scores.append(accuracy_score(y_test, y_pred))
+        
+best_k = np.argmax(accuracy_scores) + 1  # Adjusting index
+        
+# Train KNN with best K without PCA
+knn = KNeighborsClassifier(n_neighbors=best_k)
+knn.fit(X_train_scaled, y_train)
+y_pred = knn.predict(X_test_scaled)
+accuracy_no_pca = accuracy_score(y_test, y_pred)
+        
+# Apply PCA
+pca = PCA(n_components=2)  # Reduce dimensions to 2 for visualization
+X_train_pca = pca.fit_transform(X_train_scaled)
+X_test_pca = pca.transform(X_test_scaled)
+        
+# Finding best K value with PCA
+accuracy_scores_pca = []
+        
+for k in k_range:
+    knn_pca = KNeighborsClassifier(n_neighbors=k)
+    knn_pca.fit(X_train_pca, y_train)
+    y_pred_pca = knn_pca.predict(X_test_pca)
+    accuracy_scores_pca.append(accuracy_score(y_test, y_pred_pca))
+        
+best_k_pca = np.argmax(accuracy_scores_pca) + 1
+        
+# Train KNN with best K after PCA
+knn_pca = KNeighborsClassifier(n_neighbors=best_k_pca)
+knn_pca.fit(X_train_pca, y_train)
+y_pred_pca = knn_pca.predict(X_test_pca)
+accuracy_with_pca = accuracy_score(y_test, y_pred_pca)
+        
+# Compare Accuracy Before & After PCA
+print(f"Best K without PCA: {best_k}, Accuracy: {accuracy_no_pca:.4f}")
+print(f"Best K with PCA: {best_k_pca}, Accuracy: {accuracy_with_pca:.4f}")
+        
+# Plot accuracy comparison
+plt.figure(figsize=(8, 6))
+plt.plot(k_range, accuracy_scores, marker='o', label="Without PCA")
+plt.plot(k_range, accuracy_scores_pca, marker='s', linestyle='dashed', label="With PCA")
+plt.xlabel("Number of Neighbors (K)")
+plt.ylabel("Accuracy")
+plt.title("KNN Accuracy Before and After PCA")
+plt.legend()
+plt.show()
+        
+# Scatter plot of PCA-reduced data
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x=X_train_pca[:, 0], y=X_train_pca[:, 1], hue=y_train, palette='coolwarm')
+plt.title("PCA-Reduced Data Scatter Plot")
+plt.xlabel("Principal Component 1")
+plt.ylabel("Principal Component 2")
+plt.show()
+</code></pre>
+
+    <!-- EX-LDA  -->
+    <h2> LDA - Linear discriminant analysis </h2>
+   <p>In this Program has diabetes dataset , any other data change according to it </p>
+    <pre><code>
+import pandas as pd
+import numpy as py
+diabetes=pd.read_csv('diabetes.csv')
+diabetes.head()
+features = ['Pregnancies','Glucose','BloodPressure','SkinThickness','Insulin','BMI','DiabetesPedigreeFunction','Age']
+label = 'Outcome'
+X, y = diabetes[features].values, diabetes[label].values
+for n in range(0,4):
+    print("Patient", str(n+1), "\n  Features:",list(X[n]), "\n  Label:", y[n])
+
+from matplotlib import pyplot as plt
+%matplotlib inline
+    
+features = ['Pregnancies','Glucose','BloodPressure','SkinThickness','Insulin','BMI','DiabetesPedigreeFunction','Age']
+for col in features:
+    diabetes.boxplot(column=col, by='Outcome', figsize=(6,6))
+    plt.title(col)
+plt.show()
+
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=42)
+print ('Training cases: %d\nTest cases: %d' % (X_train.shape[0], X_test.shape[0]))
+
+
+from sklearn.linear_model import LogisticRegression
+
+# Set regularization rate
+reg = 0.01
+
+# train a logistic regression model on the training set
+model = LogisticRegression(C=1/reg, solver="liblinear").fit(X_train, y_train)
+print (model)
+
+predictions = model.predict(X_test)
+print('Predicted labels: ', predictions)
+print('Actual labels:    ' ,y_test)
+
+from sklearn.metrics import accuracy_score
+
+print('Accuracy: ', accuracy_score(y_test, predictions))
+
+
+from sklearn. metrics import classification_report
+
+print(classification_report(y_test, predictions))
+
+
+from sklearn.metrics import precision_score, recall_score
+
+print("Overall Precision:",precision_score(y_test, predictions))
+print("Overall Recall:",recall_score(y_test, predictions))
+
+y_scores = model.predict_proba(X_test)
+print(y_scores[:10,])
+
+#ROC Curve
+from sklearn.metrics import roc_curve
+from sklearn.metrics import confusion_matrix
+import matplotlib
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+fpr, tpr, thresholds = roc_curve(y_test, y_scores[:,1])
+
+fig = plt.figure(figsize=(6, 6))
+plt.plot([0, 1], [0, 1], 'k--')
+plt.plot(fpr, tpr)
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve')
+plt.show()
+
+from sklearn.metrics import roc_auc_score
+
+auc = roc_auc_score(y_test,y_scores[:,1])
+print('AUC: ' + str(auc))
+
+import matplotlib.pyplot as plt  
+import seaborn as sns  
+
+sns.set(style="whitegrid")  
+
+plt.figure(figsize=(10, 6))  
+sns.scatterplot(data=diabetes, x='Glucose', y='BMI', hue='Outcome', style='Outcome', palette='deep')  
+
+plt.title('Scatter Plot of Glucose vs BMI for Diabetes Classification')  
+plt.xlabel('Glucose Level')  
+plt.ylabel('BMI')  
+plt.legend(title='Diabetes Outcome', loc='upper right', labels=['No Diabetes', 'Diabetes'])  
+plt.show()
+
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+import matplotlib.pyplot as plt
+import numpy as np
+
+lda = LinearDiscriminantAnalysis(n_components=1)
+X_lda = lda.fit_transform(X, y)
+
+plt.figure(figsize=(8, 6))
+plt.scatter(X_lda, np.zeros_like(X_lda), c=y, cmap='rainbow', alpha=0.7, edgecolors='k')
+plt.title('1D Subspace Plot using LDA')
+plt.xlabel('LDA Component 1')
+plt.yticks([])  
+plt.colorbar(label='Outcome')
+plt.show()
+
+print("Class means in the LDA subspace:")
+print(lda.means_)
+
+print("Explained variance ratio (only for n_components > 1):", lda.explained_variance_ratio_)
+    </code></pre>
+
+    
+    <h2>Linear Regression</h2>
+  
+    <pre><code>
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+        
+# Sample DataFrame
+data = pd.read_csv('advertising.csv')
+        
+# Correlation Heatmap
+plt.figure(figsize=(8,6))
+sns.heatmap(data.corr(), annot=True, cmap="coolwarm", fmt=".2f")
+plt.title("Feature Correlation Heatmap")
+plt.show()
+        
+# Pairplot
+sns.pairplot(data)
+plt.show()
+        
+# Defining X and y
+X = data[['TV', 'Radio', 'Newspaper']]
+y = data['Sales']
+        
+# Splitting Data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+# Model Training
+model = LinearRegression()
+model.fit(X_train, y_train)
+        
+# Predictions
+y_pred = model.predict(X_test)
+        
+# Regression Metrics
+print(f"R² Score: {r2_score(y_test, y_pred):.4f}")
+print(f"MAE: {mean_absolute_error(y_test, y_pred):.4f}")
+print(f"RMSE: {np.sqrt(mean_squared_error(y_test, y_pred)):.4f}")
+        
+# Scatter Plot with Regression Line (for TV vs Sales)
+plt.figure(figsize=(8,6))
+plt.scatter(y_test, y_pred, color='blue', alpha=0.5, label='Predicted vs Actual')  
+plt.plot([y.min(), y.max()], [y.min(), y.max()], color='red', linewidth=2, label='Perfect Prediction')  
+plt.xlabel("Actual")
+plt.ylabel("Predicted")
+plt.title("with Regression Line")
+plt.legend()
+plt.show()
+    
+</code></pre>
+
+    
+    <h2> Linear Regression with PCA <h2>
+
+    <pre><code>
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+        
+# Sample DataFrame
+data = pd.read_csv('advertising.csv')
+        
+# Defining Features and Target
+X = data[['TV', 'Radio', 'Newspaper']]
+y = data['Sales']
+        
+# Standardizing Features (PCA requires scaling)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+        
+# Apply PCA
+pca = PCA(n_components=2)  # Reduce to 2 principal components
+X_pca = pca.fit_transform(X_scaled)
+        
+# Explained Variance
+print(f"Explained Variance by Components: {pca.explained_variance_ratio_}")
+        
+# Splitting Data
+X_train, X_test, y_train, y_test = train_test_split(X_pca, y, test_size=0.2, random_state=42)
+        
+# Model Training
+model = LinearRegression()
+model.fit(X_train, y_train)
+        
+# Predictions
+y_pred = model.predict(X_test)
+        
+# Regression Metrics
+print(f"R² Score: {r2_score(y_test, y_pred):.4f}")
+print(f"MAE: {mean_absolute_error(y_test, y_pred):.4f}")
+print(f"RMSE: {np.sqrt(mean_squared_error(y_test, y_pred)):.4f}")
+        
+# Scatter Plot: Actual vs Predicted Sales
+plt.figure(figsize=(8,6))
+plt.scatter(y_test, y_pred, color='blue', alpha=0.5, label='Predicted vs Actual')  
+plt.plot([y.min(), y.max()], [y.min(), y.max()], color='red', linewidth=2, label='Perfect Prediction')  
+plt.xlabel("Actual Sales")
+plt.ylabel("Predicted Sales")
+plt.title("Actual vs Predicted Sales with Regression Line")
+plt.legend()
+plt.show()
+    </code></pre>
+
+    <!-- EX-10 Apriori Algorithm and Subgraph Mining -->
+    <h2> Linear Regression with LDA </h2>
+    
+
+    <pre><code>
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.preprocessing import StandardScaler
+        
+# Sample DataFrame
+data = pd.read_csv('advertising.csv')
+        
+ # Convert Sales into Categorical Classes for LDA
+data['Sales_Category'] = pd.qcut(data['Sales'], q=2, labels=[0, 1])  # Two categories (Low, High)
+        
+# Defining Features and Target for LDA
+X = data[['TV', 'Radio', 'Newspaper']]
+y_lda = data['Sales_Category']  # LDA requires categorical target
+        
+# Standardizing Features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+        
+# Apply LDA
+lda = LinearDiscriminantAnalysis(n_components=1)  # Reduce to 1 component
+X_lda = lda.fit_transform(X_scaled, y_lda)
+        
+# Splitting Data
+X_train, X_test, y_train, y_test = train_test_split(X_lda, data['Sales'], test_size=0.2, random_state=42)
+        
+# Model Training
+model = LinearRegression()
+model.fit(X_train, y_train)
+        
+# Predictions
+y_pred = model.predict(X_test)
+        
+# Regression Metrics
+print(f"R² Score: {r2_score(y_test, y_pred):.4f}")
+print(f"MAE: {mean_absolute_error(y_test, y_pred):.4f}")
+print(f"RMSE: {np.sqrt(mean_squared_error(y_test, y_pred)):.4f}")
+        
+# Scatter Plot: Actual vs Predicted Sales
+plt.figure(figsize=(8,6))
+plt.scatter(y_test, y_pred, color='blue', alpha=0.5, label='Predicted vs Actual')  
+plt.plot([data['Sales'].min(), data['Sales'].max()], 
+         [data['Sales'].min(), data['Sales'].max()], 
+         color='red', linewidth=2, label='Perfect Prediction')  
+plt.xlabel("Actual Sales")
+plt.ylabel("Predicted Sales")
+plt.title("Actual vs Predicted Sales with Regression Line (LDA)")
+plt.legend()
+plt.show()
+        
+        </code></pre>
+
+        <footer style="margin-top: 40px; text-align: center; font-size: 14px; color: #7f8c8d;">
+            Made by 0b1001001
+        </footer>
+
+</body>
+</html>
